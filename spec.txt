@@ -1,0 +1,33 @@
+Components for the weekend:	
+	State
+		List of pieces
+			Position
+			player
+			Name?
+			type (planet or ship for now)
+				Ships have speed
+				Ships have detection range
+					Future: different sensor packages have different ranges
+					Future: sensor package has different ranges for different targets
+				Ships have movement plans (list of waypoints?)
+					Throws an exception when plan ends?
+					Near future: tool for constructing waypoints
+					Future: AI can make decisions at plan end
+					
+	
+	State renderer
+		A single continuous 2D board
+			infinite or near infinite
+			Future: multiple boards, ability to switch between them
+		Rendering of board in 2D 
+			In a window
+		Rendering of objects in 2D
+			As points
+				colour: blue for P1, red for P2 & out of range, orange for P2 & in range?
+		Zoom and pan functionality
+			Buttons on a side-panel?
+	
+	State incrementer
+		Variable size time increments
+		Game pauses when ships enter each other's detection radii
+	
