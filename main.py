@@ -1,8 +1,9 @@
 
 class GamePiece:
+    """"This is the parent of all classes that have a presence on the map."""
     detectRange = 0  # by default things don't detect
     speed = 0  # by default things don't move
-    """"This is a thing class. It represents an object or coll"""
+
     def __init__(self, position):
         assert isinstance(position, tuple)
         assert len(position) == 2
