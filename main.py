@@ -12,7 +12,7 @@ last edited: January 2015
 """
 
 import sys, random
-from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, QPushButton, QAction, qApp, QGridLayout, QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, QPushButton, QAction, qApp, QGridLayout, QVBoxLayout, QHBoxLayout, QWidget
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPainter, QColor, QIcon
 
@@ -32,11 +32,11 @@ class OpenAurora(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.tboard = Board(self)
-        self.setCentralWidget(self.tboard)
+        self.maintab = MapTab(self)
+        self.setCentralWidget(self.maintab)
 
-        self.statusbar = self.statusBar()
-        self.tboard.msg2Statusbar[str].connect(self.statusbar.showMessage)
+        #self.statusbar = self.statusBar()
+        #self.tboard.msg2Statusbar[str].connect(self.statusbar.showMessage)
 
         exitAction = QAction(QIcon('exit24.png'), 'Exit', self)
         exitAction.setShortcut('Ctrl+Q')
@@ -46,15 +46,7 @@ class OpenAurora(QMainWindow):
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(exitAction)
 
-        turnBtn = QPushButton('Next turn', self)
-        turnBtn.setToolTip('This ends the turn')
-        turnBtn.resize(turnBtn.sizeHint())
-        turnBtn.move(50, 50)
-        turnBtn.clicked.connect(self.end_turn)
-
-        self.tboard.start()
-
-        self.resize(180, 380)
+        self.resize(300, 380)
         self.center()
         self.setWindowTitle('OpenAurora')
         self.show()
@@ -67,7 +59,29 @@ class OpenAurora(QMainWindow):
 
     def end_turn(self):
         """This method ends the turn"""
-        self.tboard.end_turn()
+        self.maintab.tboard.end_turn()
+
+
+class MapTab(QWidget):
+    def __init__(self, parent):
+        super().__init__()
+
+        self.tboard = Board(self)
+
+        turnBtn = QPushButton('Next turn', self)
+        turnBtn.setToolTip('This ends the turn')
+        turnBtn.resize(turnBtn.sizeHint())
+        turnBtn.clicked.connect(parent.end_turn)
+
+        hbox = QHBoxLayout()
+
+        hbox.addWidget(turnBtn)
+        hbox.addWidget(self.tboard, stretch=1)
+
+        self.setLayout(hbox)
+
+        self.tboard.start()
+
 
 class Board(QFrame):
     msg2Statusbar = pyqtSignal(str)
@@ -89,8 +103,6 @@ class Board(QFrame):
         self.setFocusPolicy(Qt.StrongFocus)
         self.clearBoard()
 
-        self.setGeometry(300, 300, 300, 200)
-        self.setWindowTitle('Tooltips')
         self.show()
 
     def shapeAt(self, x, y):
