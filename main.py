@@ -12,9 +12,9 @@ last edited: January 2015
 """
 
 import sys, random
-from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication
-from PyQt5.QtCore import Qt, QBasicTimer, pyqtSignal
-from PyQt5.QtGui import QPainter, QColor
+from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, QPushButton, QAction, qApp, QGridLayout, QVBoxLayout, QHBoxLayout
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtGui import QPainter, QColor, QIcon
 
 
 class GamePiece:
@@ -28,7 +28,7 @@ class GamePiece:
         self.position = position
 
 
-class Tetris(QMainWindow):
+class OpenAurora(QMainWindow):
     def __init__(self):
         super().__init__()
 
@@ -38,11 +38,25 @@ class Tetris(QMainWindow):
         self.statusbar = self.statusBar()
         self.tboard.msg2Statusbar[str].connect(self.statusbar.showMessage)
 
+        exitAction = QAction(QIcon('exit24.png'), 'Exit', self)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.triggered.connect(qApp.quit)
+
+        menubar = self.menuBar()
+        fileMenu = menubar.addMenu('&File')
+        fileMenu.addAction(exitAction)
+
+        turnBtn = QPushButton('Next turn', self)
+        turnBtn.setToolTip('This ends the turn')
+        turnBtn.resize(turnBtn.sizeHint())
+        turnBtn.move(50, 50)
+        turnBtn.clicked.connect(self.end_turn)
+
         self.tboard.start()
 
         self.resize(180, 380)
         self.center()
-        self.setWindowTitle('Tetris')
+        self.setWindowTitle('OpenAurora')
         self.show()
 
     def center(self):
@@ -51,6 +65,9 @@ class Tetris(QMainWindow):
         self.move((screen.width() - size.width()) / 2,
                   (screen.height() - size.height()) / 2)
 
+    def end_turn(self):
+        """This method ends the turn"""
+        self.tboard.end_turn()
 
 class Board(QFrame):
     msg2Statusbar = pyqtSignal(str)
@@ -62,7 +79,6 @@ class Board(QFrame):
     def __init__(self, parent):
         super().__init__(parent,)
 
-        self.timer = QBasicTimer()
         self.isWaitingAfterLine = False
 
         self.curX = 0
@@ -71,9 +87,11 @@ class Board(QFrame):
         self.board = []
 
         self.setFocusPolicy(Qt.StrongFocus)
-        self.isStarted = False
-        self.isPaused = False
         self.clearBoard()
+
+        self.setGeometry(300, 300, 300, 200)
+        self.setWindowTitle('Tooltips')
+        self.show()
 
     def shapeAt(self, x, y):
         return self.board[(y * Board.BoardWidth) + x]
@@ -89,10 +107,6 @@ class Board(QFrame):
 
     def start(self):
 
-        if self.isPaused:
-            return
-
-        self.isStarted = True
         self.isWaitingAfterLine = False
         self.numLinesRemoved = 0
         self.clearBoard()
@@ -100,29 +114,13 @@ class Board(QFrame):
         self.msg2Statusbar.emit(str(self.numLinesRemoved))
 
         self.newPiece()
-        self.timer.start(Board.Speed, self)
-
-    def pause(self):
-
-        if not self.isStarted:
-            return
-
-        self.isPaused = not self.isPaused
-
-        if self.isPaused:
-            self.timer.stop()
-            self.msg2Statusbar.emit("paused")
-
-        else:
-            self.timer.start(Board.Speed, self)
-            self.msg2Statusbar.emit(str(self.numLinesRemoved))
-
-        self.update()
 
     def paintEvent(self, event):
 
         painter = QPainter(self)
         rect = self.contentsRect()
+
+        painter.fillRect(0, 0, rect.right(), rect.bottom(), QColor(0x000000))
 
         boardTop = rect.bottom() - Board.BoardHeight * self.squareHeight()
 
@@ -146,20 +144,13 @@ class Board(QFrame):
 
     def keyPressEvent(self, event):
 
-        if not self.isStarted or self.curPiece.shape() == Tetrominoe.NoShape:
+        if self.curPiece.shape() == Tetrominoe.NoShape:
             super(Board, self).keyPressEvent(event)
             return
 
         key = event.key()
 
-        if key == Qt.Key_P:
-            self.pause()
-            return
-
-        if self.isPaused:
-            return
-
-        elif key == Qt.Key_Left:
+        if key == Qt.Key_Left:
             self.tryMove(self.curPiece, self.curX - 1, self.curY)
 
         elif key == Qt.Key_Right:
@@ -180,18 +171,13 @@ class Board(QFrame):
         else:
             super(Board, self).keyPressEvent(event)
 
-    def timerEvent(self, event):
-
-        if event.timerId() == self.timer.timerId():
-
-            if self.isWaitingAfterLine:
-                self.isWaitingAfterLine = False
-                self.newPiece()
-            else:
-                self.oneLineDown()
-
+    def end_turn(self):
+        """This method ends the turn"""
+        if self.isWaitingAfterLine:
+            self.isWaitingAfterLine = False
+            self.newPiece()
         else:
-            super(Board, self).timerEvent(event)
+            self.oneLineDown()
 
     def clearBoard(self):
 
@@ -264,8 +250,6 @@ class Board(QFrame):
 
         if not self.tryMove(self.curPiece, self.curX, self.curY):
             self.curPiece.setShape(Tetrominoe.NoShape)
-            self.timer.stop()
-            self.isStarted = False
             self.msg2Statusbar.emit("Game over")
 
     def tryMove(self, newPiece, newX, newY):
@@ -429,5 +413,5 @@ class Shape(object):
 
 if __name__ == '__main__':
     app = QApplication([])
-    tetris = Tetris()
+    OA = OpenAurora()
     sys.exit(app.exec_())
