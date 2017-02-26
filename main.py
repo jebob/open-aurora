@@ -28,9 +28,22 @@ class GamePiece:
         self.position = position
 
 
+class GameState:
+    """This is a dummy class containing the entire game state"""
+    def __init__(self):
+        self.pieceList = []
+        self.set_demo()
+
+    def set_demo(self):
+        demo_posns = [(1, 2), (4, 5), (3, -1)]
+        self.pieceList = [GamePiece(posn) for posn in demo_posns]
+
+
 class OpenAurora(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        self.state = GameState()
 
         self.maintab = MapTab(self)
         self.setCentralWidget(self.maintab)
@@ -59,14 +72,14 @@ class OpenAurora(QMainWindow):
 
     def end_turn(self):
         """This method ends the turn"""
-        self.maintab.tboard.end_turn()
+        pass
 
 
 class MapTab(QWidget):
     def __init__(self, parent):
         super().__init__()
 
-        self.tboard = Board(self)
+        self.mapFrame = TacView(parent.state)
 
         turnBtn = QPushButton('Next turn', self)
         turnBtn.setToolTip('This ends the turn')
@@ -76,56 +89,21 @@ class MapTab(QWidget):
         hbox = QHBoxLayout()
 
         hbox.addWidget(turnBtn)
-        hbox.addWidget(self.tboard, stretch=1)
+        hbox.addWidget(self.mapFrame, stretch=1)
 
         self.setLayout(hbox)
 
-        self.tboard.start()
 
-
-class Board(QFrame):
-    msg2Statusbar = pyqtSignal(str)
-
-    BoardWidth = 10
-    BoardHeight = 22
-    Speed = 300
-
-    def __init__(self, parent):
-        super().__init__(parent,)
-
-        self.isWaitingAfterLine = False
+class TacView(QFrame):
+    """This class is for rendering the positions of things on a tactical view"""
+    def __init__(self, state):
+        super().__init__()
 
         self.curX = 0
         self.curY = 0
-        self.numLinesRemoved = 0
-        self.board = []
+        self.curScale = 100.0
 
-        self.setFocusPolicy(Qt.StrongFocus)
-        self.clearBoard()
-
-        self.show()
-
-    def shapeAt(self, x, y):
-        return self.board[(y * Board.BoardWidth) + x]
-
-    def setShapeAt(self, x, y, shape):
-        self.board[(y * Board.BoardWidth) + x] = shape
-
-    def squareWidth(self):
-        return self.contentsRect().width() // Board.BoardWidth
-
-    def squareHeight(self):
-        return self.contentsRect().height() // Board.BoardHeight
-
-    def start(self):
-
-        self.isWaitingAfterLine = False
-        self.numLinesRemoved = 0
-        self.clearBoard()
-
-        self.msg2Statusbar.emit(str(self.numLinesRemoved))
-
-        self.newPiece()
+        self.state = state
 
     def paintEvent(self, event):
 
@@ -134,164 +112,18 @@ class Board(QFrame):
 
         painter.fillRect(0, 0, rect.right(), rect.bottom(), QColor(0x000000))
 
-        boardTop = rect.bottom() - Board.BoardHeight * self.squareHeight()
+        for piece in self.state.pieceList:
+            self.draw_ship(painter, piece.position[0] * self.curScale, piece.position[1] * self.curScale)
+            pass
 
-        for i in range(Board.BoardHeight):
-            for j in range(Board.BoardWidth):
-                shape = self.shapeAt(j, Board.BoardHeight - i - 1)
-
-                if shape != Tetrominoe.NoShape:
-                    self.draw_ship(painter,
-                                   rect.left() + j * self.squareWidth(),
-                                   boardTop + i * self.squareHeight(), shape)
-
-        if self.curPiece.shape() != Tetrominoe.NoShape:
-
-            for i in range(4):
-                x = self.curX + self.curPiece.x(i)
-                y = self.curY - self.curPiece.y(i)
-                self.draw_ship(painter, rect.left() + x * self.squareWidth(),
-                               boardTop + (Board.BoardHeight - y - 1) * self.squareHeight(),
-                               self.curPiece.shape())
-
-    def keyPressEvent(self, event):
-
-        if self.curPiece.shape() == Tetrominoe.NoShape:
-            super(Board, self).keyPressEvent(event)
-            return
-
-        key = event.key()
-
-        if key == Qt.Key_Left:
-            self.tryMove(self.curPiece, self.curX - 1, self.curY)
-
-        elif key == Qt.Key_Right:
-            self.tryMove(self.curPiece, self.curX + 1, self.curY)
-
-        elif key == Qt.Key_Down:
-            self.tryMove(self.curPiece.rotateRight(), self.curX, self.curY)
-
-        elif key == Qt.Key_Up:
-            self.tryMove(self.curPiece.rotateLeft(), self.curX, self.curY)
-
-        elif key == Qt.Key_Space:
-            self.dropDown()
-
-        elif key == Qt.Key_D:
-            self.oneLineDown()
-
-        else:
-            super(Board, self).keyPressEvent(event)
-
-    def end_turn(self):
-        """This method ends the turn"""
-        if self.isWaitingAfterLine:
-            self.isWaitingAfterLine = False
-            self.newPiece()
-        else:
-            self.oneLineDown()
-
-    def clearBoard(self):
-
-        for i in range(Board.BoardHeight * Board.BoardWidth):
-            self.board.append(Tetrominoe.NoShape)
-
-    def dropDown(self):
-
-        newY = self.curY
-
-        while newY > 0:
-
-            if not self.tryMove(self.curPiece, self.curX, newY - 1):
-                break
-
-            newY -= 1
-
-        self.pieceDropped()
-
-    def oneLineDown(self):
-
-        if not self.tryMove(self.curPiece, self.curX, self.curY - 1):
-            self.pieceDropped()
-
-    def pieceDropped(self):
-
-        for i in range(4):
-            x = self.curX + self.curPiece.x(i)
-            y = self.curY - self.curPiece.y(i)
-            self.setShapeAt(x, y, self.curPiece.shape())
-
-        self.removeFullLines()
-
-        if not self.isWaitingAfterLine:
-            self.newPiece()
-
-    def removeFullLines(self):
-
-        numFullLines = 0
-        rowsToRemove = []
-
-        for i in range(Board.BoardHeight):
-
-            if all(self.shapeAt(j, i) != Tetrominoe.NoShape for j in range(Board.BoardWidth)):
-                rowsToRemove.append(i)
-
-        rowsToRemove.reverse()
-
-        for m in rowsToRemove:
-            for k in range(m, Board.BoardHeight):
-                for l in range(Board.BoardWidth):
-                    self.setShapeAt(l, k, self.shapeAt(l, k + 1))
-
-        numFullLines += len(rowsToRemove)
-
-        if numFullLines > 0:
-            self.numLinesRemoved += numFullLines
-            self.msg2Statusbar.emit(str(self.numLinesRemoved))
-
-            self.isWaitingAfterLine = True
-            self.curPiece.setShape(Tetrominoe.NoShape)
-            self.update()
-
-    def newPiece(self):
-
-        self.curPiece = Shape()
-        self.curPiece.setRandomShape()
-        self.curX = Board.BoardWidth // 2 + 1
-        self.curY = Board.BoardHeight - 1 + self.curPiece.minY()
-
-        if not self.tryMove(self.curPiece, self.curX, self.curY):
-            self.curPiece.setShape(Tetrominoe.NoShape)
-            self.msg2Statusbar.emit("Game over")
-
-    def tryMove(self, newPiece, newX, newY):
-
-        for i in range(4):
-
-            x = newX + newPiece.x(i)
-            y = newY - newPiece.y(i)
-
-            if x < 0 or x >= Board.BoardWidth or y < 0 or y >= Board.BoardHeight:
-                return False
-
-            if self.shapeAt(x, y) != Tetrominoe.NoShape:
-                return False
-
-        self.curPiece = newPiece
-        self.curX = newX
-        self.curY = newY
-        self.update()
-
-        return True
-
-    def draw_ship(self, painter, x, y, shape):
+    def draw_ship(self, painter, x, y):
 
         colorTable = [0x000000, 0xCC6666, 0x66CC66, 0x6666CC,
                       0xCCCC66, 0xCC66CC, 0x66CCCC, 0xDAAA00]
 
-        color = QColor(colorTable[shape])
-        painter.fillRect(x + 1, y + 1, self.squareWidth() - 2,
-                         self.squareHeight() - 2, color)
+        color = QColor(0x6666CC)
+        width = 10
+        painter.fillRect(x, y, width, width, color)
 
         #painter.setPen(color.lighter())
         #painter.drawLine(x, y + self.squareHeight() - 1, x, y)
