@@ -11,9 +11,10 @@ website: zetcode.com
 last edited: January 2015
 """
 
-import sys, random
-from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, QPushButton, QAction, qApp, QGridLayout, QVBoxLayout, QHBoxLayout, QWidget
-from PyQt5.QtCore import Qt, pyqtSignal
+import sys
+import random
+from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, QPushButton, QAction, qApp, \
+    QGridLayout, QVBoxLayout, QHBoxLayout, QWidget
 from PyQt5.QtGui import QPainter, QColor, QIcon
 
 
@@ -48,16 +49,13 @@ class OpenAurora(QMainWindow):
         self.maintab = MapTab(self)
         self.setCentralWidget(self.maintab)
 
-        #self.statusbar = self.statusBar()
-        #self.tboard.msg2Statusbar[str].connect(self.statusbar.showMessage)
-
-        exitAction = QAction(QIcon('exit24.png'), 'Exit', self)
-        exitAction.setShortcut('Ctrl+Q')
-        exitAction.triggered.connect(qApp.quit)
+        exit_action = QAction(QIcon('exit24.png'), 'Exit', self)
+        exit_action.setShortcut('Ctrl+Q')
+        exit_action.triggered.connect(qApp.quit)
 
         menubar = self.menuBar()
-        fileMenu = menubar.addMenu('&File')
-        fileMenu.addAction(exitAction)
+        file_menu = menubar.addMenu('&File')
+        file_menu.addAction(exit_action)
 
         self.resize(300, 380)
         self.center()
@@ -81,14 +79,14 @@ class MapTab(QWidget):
 
         self.mapFrame = TacView(parent.state)
 
-        turnBtn = QPushButton('Next turn', self)
-        turnBtn.setToolTip('This ends the turn')
-        turnBtn.resize(turnBtn.sizeHint())
-        turnBtn.clicked.connect(parent.end_turn)
+        turn_btn = QPushButton('Next turn', self)
+        turn_btn.setToolTip('This ends the turn')
+        turn_btn.resize(turn_btn.sizeHint())
+        turn_btn.clicked.connect(parent.end_turn)
 
         hbox = QHBoxLayout()
 
-        hbox.addWidget(turnBtn)
+        hbox.addWidget(turn_btn)
         hbox.addWidget(self.mapFrame, stretch=1)
 
         self.setLayout(hbox)
@@ -116,144 +114,11 @@ class TacView(QFrame):
             self.draw_ship(painter, piece.position[0] * self.curScale, piece.position[1] * self.curScale)
             pass
 
-    def draw_ship(self, painter, x, y):
-
-        colorTable = [0x000000, 0xCC6666, 0x66CC66, 0x6666CC,
-                      0xCCCC66, 0xCC66CC, 0x66CCCC, 0xDAAA00]
-
+    @staticmethod
+    def draw_ship(painter, x, y):
         color = QColor(0x6666CC)
         width = 10
         painter.fillRect(x, y, width, width, color)
-
-        #painter.setPen(color.lighter())
-        #painter.drawLine(x, y + self.squareHeight() - 1, x, y)
-        #painter.drawLine(x, y, x + self.squareWidth() - 1, y)
-
-        #painter.setPen(color.darker())
-        #painter.drawLine(x + 1, y + self.squareHeight() - 1,
-        #                 x + self.squareWidth() - 1, y + self.squareHeight() - 1)
-        #painter.drawLine(x + self.squareWidth() - 1,
-        #                 y + self.squareHeight() - 1, x + self.squareWidth() - 1, y + 1)
-
-
-class Tetrominoe(object):
-    NoShape = 0
-    ZShape = 1
-    SShape = 2
-    LineShape = 3
-    TShape = 4
-    SquareShape = 5
-    LShape = 6
-    MirroredLShape = 7
-
-
-class Shape(object):
-    coordsTable = (
-        ((0, 0), (0, 0), (0, 0), (0, 0)),
-        ((0, -1), (0, 0), (-1, 0), (-1, 1)),
-        ((0, -1), (0, 0), (1, 0), (1, 1)),
-        ((0, -1), (0, 0), (0, 1), (0, 2)),
-        ((-1, 0), (0, 0), (1, 0), (0, 1)),
-        ((0, 0), (1, 0), (0, 1), (1, 1)),
-        ((-1, -1), (0, -1), (0, 0), (0, 1)),
-        ((1, -1), (0, -1), (0, 0), (0, 1))
-    )
-
-    def __init__(self):
-
-        self.coords = [[0, 0] for i in range(4)]
-        self.pieceShape = Tetrominoe.NoShape
-
-        self.setShape(Tetrominoe.NoShape)
-
-    def shape(self):
-        return self.pieceShape
-
-    def setShape(self, shape):
-
-        table = Shape.coordsTable[shape]
-
-        for i in range(4):
-            for j in range(2):
-                self.coords[i][j] = table[i][j]
-
-        self.pieceShape = shape
-
-    def setRandomShape(self):
-        self.setShape(random.randint(1, 7))
-
-    def x(self, index):
-        return self.coords[index][0]
-
-    def y(self, index):
-        return self.coords[index][1]
-
-    def setX(self, index, x):
-        self.coords[index][0] = x
-
-    def setY(self, index, y):
-        self.coords[index][1] = y
-
-    def minX(self):
-
-        m = self.coords[0][0]
-        for i in range(4):
-            m = min(m, self.coords[i][0])
-
-        return m
-
-    def maxX(self):
-
-        m = self.coords[0][0]
-        for i in range(4):
-            m = max(m, self.coords[i][0])
-
-        return m
-
-    def minY(self):
-
-        m = self.coords[0][1]
-        for i in range(4):
-            m = min(m, self.coords[i][1])
-
-        return m
-
-    def maxY(self):
-
-        m = self.coords[0][1]
-        for i in range(4):
-            m = max(m, self.coords[i][1])
-
-        return m
-
-    def rotateLeft(self):
-
-        if self.pieceShape == Tetrominoe.SquareShape:
-            return self
-
-        result = Shape()
-        result.pieceShape = self.pieceShape
-
-        for i in range(4):
-            result.setX(i, self.y(i))
-            result.setY(i, -self.x(i))
-
-        return result
-
-    def rotateRight(self):
-
-        if self.pieceShape == Tetrominoe.SquareShape:
-            return self
-
-        result = Shape()
-        result.pieceShape = self.pieceShape
-
-        for i in range(4):
-            result.setX(i, -self.y(i))
-            result.setY(i, self.x(i))
-
-        return result
-
 
 if __name__ == '__main__':
     app = QApplication([])
