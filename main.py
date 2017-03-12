@@ -13,8 +13,9 @@ import math
 import sys
 import random
 from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, QPushButton, QAction, qApp, \
-    QGridLayout, QVBoxLayout, QHBoxLayout, QWidget
+    QGridLayout, QVBoxLayout, QHBoxLayout, QWidget, QLabel
 from PyQt5.QtGui import QPainter, QColor, QIcon
+from PyQt5.QtCore import *
 
 eventQueue = []  # todo this properly later
 
@@ -136,12 +137,43 @@ class MapTab(QWidget):
         turn_btn.resize(turn_btn.sizeHint())
         turn_btn.clicked.connect(parent.end_turn)
 
+        self.x_label = QLabel('x_label')
+        self.y_label = QLabel('y_label')
+        self.s_label = QLabel('s_label')
+
+        ctrl_panel = QVBoxLayout()
+        ctrl_panel.addWidget(self.x_label, alignment=Qt.AlignHCenter)
+        ctrl_panel.addWidget(self.y_label, alignment=Qt.AlignHCenter)
+        ctrl_panel.addWidget(self.s_label, alignment=Qt.AlignHCenter)
+        ctrl_panel.addWidget(turn_btn, alignment=Qt.AlignHCenter)
+
         hbox = QHBoxLayout()
 
-        hbox.addWidget(turn_btn)
+        hbox.addLayout(ctrl_panel)
         hbox.addWidget(self.mapFrame, stretch=1)
 
         self.setLayout(hbox)
+
+        self.set_view(0+0j, 100.0)
+
+    def set_view(self, posn, scal):
+        """This function sets the view to some position and scale"""
+        # Set new board position
+        self.cur_posn = posn
+        self.cur_scal = scal
+
+        # Write to the labels in the control panel.
+        self.x_label.setText('x=' + str(posn.real))
+        self.y_label.setText('y=' + str(posn.imag))
+        self.s_label.setText('scale=' + str(scal))
+
+        # Trigger a paint event??
+
+    def move_view(self, posn=None, scal=None):
+        """This function modifies the existing view by adding a new position and/or multiplying the scale."""
+        new_posn = self.cur_posn if posn is None else self.cur_posn + posn
+        new_scal = self.cur_scal if scal is None else self.cur_scal * scal
+        self.set_view(new_posn, new_scal)
 
 
 class TacView(QFrame):
