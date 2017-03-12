@@ -1,3 +1,14 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+"""
+OpenAurora
+
+This is an open-source remake of the existing game Aurora 4x created by Steve Walmsley.
+
+author: Robert Howlett
+"""
+
 import math
 import sys
 import random
