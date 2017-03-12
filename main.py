@@ -126,7 +126,10 @@ class MapTab(QWidget):
     def __init__(self, parent):
         super().__init__()
 
-        self.mapFrame = TacView(parent.state)
+        self.cur_posn = 0+0j
+        self.cur_scal = 100.0
+
+        self.mapFrame = TacView(self, parent.state)
 
         turn_btn = QPushButton('Next turn', self)
         turn_btn.setToolTip('This ends the turn')
@@ -143,12 +146,10 @@ class MapTab(QWidget):
 
 class TacView(QFrame):
     """This class is for rendering the positions of things on a tactical view"""
-    def __init__(self, state):
+    def __init__(self, parent, state):
         super().__init__()
 
-        self.curPosn = 0+0j
-        self.curScale = 100.0
-
+        self.par = parent
         self.state = state
 
     def paintEvent(self, event):
@@ -159,7 +160,7 @@ class TacView(QFrame):
         painter.fillRect(0, 0, rect.right(), rect.bottom(), QColor(0x000000))
 
         for piece in self.state.pieceList:
-            self.draw_ship(painter, (piece.start_position + self.curPosn) * self.curScale)
+            self.draw_ship(painter, (piece.start_position + self.par.cur_posn) * self.par.cur_scal)
 
     @staticmethod
     def draw_ship(painter, posn):
