@@ -66,10 +66,15 @@ class GameState:
     """This is a dummy class containing the entire game state"""
     def __init__(self):
         self.pieceList = []
-        self.set_demo()
+        self.test_render()
+        #self.test_paint_performance()
 
-    def set_demo(self):
+    def test_render(self):
         demo_posns = [1+2j, 4+5j, 3-1j]
+        self.pieceList = [GamePiece(posn, 0.0) for posn in demo_posns]
+
+    def test_paint_performance(self):
+        demo_posns = [random.randrange(0, 400) + random.randrange(0, 400)*1j for _ in range(100000)]
         self.pieceList = [GamePiece(posn, 0.0) for posn in demo_posns]
 
 
