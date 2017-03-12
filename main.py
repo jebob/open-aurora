@@ -159,7 +159,7 @@ class TacView(QFrame):
         painter.fillRect(0, 0, rect.right(), rect.bottom(), QColor(0x000000))
 
         for piece in self.state.pieceList:
-            self.draw_ship(painter, piece.position[0] * self.curScale, piece.position[1] * self.curScale)
+            self.draw_ship(painter, (piece.start_position + self.curPosn) * self.curScale)
 
     @staticmethod
     def draw_ship(painter, posn):
