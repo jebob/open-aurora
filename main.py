@@ -107,7 +107,7 @@ class OpenAurora(QMainWindow):
         file_menu = menubar.addMenu('&File')
         file_menu.addAction(exit_action)
 
-        self.resize(300, 380)
+        self.resize(800, 600)
         self.center()
         self.setWindowTitle('OpenAurora')
         self.show()
