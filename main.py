@@ -126,6 +126,7 @@ class OpenAurora(QMainWindow):
 class MapTab(QWidget):
     def __init__(self, parent):
         super().__init__()
+        self.setFocusPolicy(Qt.StrongFocus)
 
         self.cur_posn = 0+0j
         self.cur_scal = 100.0
@@ -140,11 +141,13 @@ class MapTab(QWidget):
         self.x_label = QLabel('x_label')
         self.y_label = QLabel('y_label')
         self.s_label = QLabel('s_label')
+        self.map_instructions = QLabel('Welcome to the game!\nUse the arrow keys to move around\nand +/- to scroll.')
 
         ctrl_panel = QVBoxLayout()
         ctrl_panel.addWidget(self.x_label, alignment=Qt.AlignHCenter)
         ctrl_panel.addWidget(self.y_label, alignment=Qt.AlignHCenter)
         ctrl_panel.addWidget(self.s_label, alignment=Qt.AlignHCenter)
+        ctrl_panel.addWidget(self.map_instructions, alignment=Qt.AlignHCenter)
         ctrl_panel.addWidget(turn_btn, alignment=Qt.AlignHCenter)
 
         hbox = QHBoxLayout()
@@ -156,6 +159,29 @@ class MapTab(QWidget):
 
         self.set_view(0+0j, 100.0)
 
+    def keyPressEvent(self, event):
+        key = event.key()
+        if key == Qt.Key_Left:
+            self.move_view(posn=1)
+
+        elif key == Qt.Key_Right:
+            self.move_view(posn=-1)
+
+        elif key == Qt.Key_Up:
+            self.move_view(posn=1j)
+
+        elif key == Qt.Key_Down:
+            self.move_view(posn=-1j)
+
+        elif key == Qt.Key_Minus:
+            self.move_view(scal=1/math.sqrt(2))
+
+        elif key == Qt.Key_Plus:
+            self.move_view(scal=math.sqrt(2))
+
+        else:
+            super(MapTab, self).keyPressEvent(event)
+
     def set_view(self, posn, scal):
         """This function sets the view to some position and scale"""
         # Set new board position
@@ -163,11 +189,12 @@ class MapTab(QWidget):
         self.cur_scal = scal
 
         # Write to the labels in the control panel.
-        self.x_label.setText('x=' + str(posn.real))
-        self.y_label.setText('y=' + str(posn.imag))
-        self.s_label.setText('scale=' + str(scal))
+        self.x_label.setText('x={:4f}'.format(posn.real))
+        self.y_label.setText('y={:4f}'.format(posn.imag))
+        self.s_label.setText('scale={:4f}'.format(scal))
 
-        # Trigger a paint event??
+        # Trigger a paint event
+        self.mapFrame.update()
 
     def move_view(self, posn=None, scal=None):
         """This function modifies the existing view by adding a new position and/or multiplying the scale."""
