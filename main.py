@@ -12,8 +12,7 @@ author: Robert Howlett
 import math
 import sys
 import random
-from PyQt5.QtWidgets import QMainWindow, QFrame, QDesktopWidget, QApplication, QPushButton, QAction, qApp, \
-    QGridLayout, QVBoxLayout, QHBoxLayout, QWidget, QLabel
+from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QPainter, QColor, QIcon
 from PyQt5.QtCore import *
 
@@ -96,8 +95,14 @@ class OpenAurora(QMainWindow):
 
         self.state = GameState()
 
-        self.maintab = MapTab(self)
-        self.setCentralWidget(self.maintab)
+        self.main_view = QTabWidget(self)
+        self.setCentralWidget(self.main_view)
+
+        self.MapTab = MapTab(self)
+        self.main_view.addTab(self.MapTab, "Tactical View")
+        self.DummyTab = QLabel("This is a dummy tab")
+        self.DummyTab.setFocusPolicy(Qt.StrongFocus)
+        self.main_view.addTab(self.DummyTab, "Dummy Tab")
 
         exit_action = QAction(QIcon('exit24.png'), 'Exit', self)
         exit_action.setShortcut('Ctrl+Q')
