@@ -176,7 +176,7 @@ class MapTab(QWidget):
         elif key == Qt.Key_Minus:
             self.move_view(scal=1/math.sqrt(2))
 
-        elif key == Qt.Key_Plus:
+        elif key in [Qt.Key_Plus, Qt.Key_Equal]:
             self.move_view(scal=math.sqrt(2))
 
         else:
