@@ -118,9 +118,17 @@ class OpenAurora(QMainWindow):
         exit_action.setShortcut('Ctrl+Q')
         exit_action.triggered.connect(qApp.quit)
 
+        turn_action = QAction(QIcon('dummy.png'), 'End Turn', self)
+        turn_action.setShortcut('Ctrl+N')
+        turn_action.triggered.connect(self.end_turn)
+        # Todo: add variable target turn lengths
+        self.target_turn_length = 1
+
         menubar = self.menuBar()
         file_menu = menubar.addMenu('&File')
         file_menu.addAction(exit_action)
+        turn_menu = menubar.addMenu('&Turn')
+        turn_menu.addAction(turn_action)
 
         self.resize(800, 600)
         self.center()
