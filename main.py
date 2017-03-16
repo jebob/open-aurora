@@ -12,9 +12,11 @@ author: Robert Howlett
 import math
 import sys
 import random
+import copy
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QPainter, QColor, QIcon
 from PyQt5.QtCore import *
+from players import Human
 
 eventQueue = []  # todo this properly later
 
@@ -77,8 +79,15 @@ class GameState:
     """This is a dummy class containing the entire game state"""
     def __init__(self):
         self.pieceList = []
+        self.playerList = [Human()]
         self.test_render()
         #self.test_paint_performance()
+
+    def partial_state(self, player):
+        """This function returns the state known to the nth player"""
+        assert(player < len(self.playerList))
+        # TODO: implement
+        return copy.deepcopy(self)
 
     def test_render(self):
         demo_posns = [1+2j, 4+5j, 3-1j]
@@ -94,6 +103,7 @@ class OpenAurora(QMainWindow):
         super().__init__()
 
         self.state = GameState()
+        self.p_state = self.state.partial_state(0)
 
         self.main_view = QTabWidget(self)
         self.setCentralWidget(self.main_view)
@@ -136,7 +146,7 @@ class MapTab(QWidget):
         self.cur_posn = 0+0j
         self.cur_scal = 100.0
 
-        self.mapFrame = TacView(self, parent.state)
+        self.mapFrame = TacView(self, parent.p_state)
 
         turn_btn = QPushButton('Next turn', self)
         turn_btn.setToolTip('This ends the turn')
