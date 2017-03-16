@@ -83,6 +83,8 @@ class GameState:
         self.test_render()
         #self.test_paint_performance()
 
+        self.time = 0
+
     def partial_state(self, player):
         """This function returns the state known to the nth player"""
         assert(player < len(self.playerList))
@@ -96,6 +98,11 @@ class GameState:
     def test_paint_performance(self):
         demo_posns = [random.randrange(0, 400) + random.randrange(0, 400)*1j for _ in range(100000)]
         self.pieceList = [GamePiece(posn, 0.0) for posn in demo_posns]
+
+    def advance_time(self, target_increase):
+        """This function is the master function for advancing time. It takes a list of orders, parses and verifies them,
+        resumes running the simulation, and returns a list of events along with a new partial state."""
+        self.time += target_increase
 
 
 class OpenAurora(QMainWindow):
@@ -130,6 +137,8 @@ class OpenAurora(QMainWindow):
         turn_menu = menubar.addMenu('&Turn')
         turn_menu.addAction(turn_action)
 
+        # Advance time here.
+
         self.resize(800, 600)
         self.center()
         self.setWindowTitle('OpenAurora')
@@ -142,8 +151,15 @@ class OpenAurora(QMainWindow):
                   (screen.height() - size.height()) / 2)
 
     def end_turn(self):
-        """This method ends the turn"""
-        pass
+        """This method ends the turn and updates the UI accordingly."""
+        increment = self.target_turn_length
+        self.state.advance_time(increment)
+        self.update_ui()
+
+    def update_ui(self):
+        # Todo: ensure t_label on the MapTab is written to correctly.
+        self.MapTab.t_label.setText('time={:4f}'.format(self.p_state.time))
+        self.MapTab.update()
 
 
 class MapTab(QWidget):
@@ -164,12 +180,14 @@ class MapTab(QWidget):
         self.x_label = QLabel('x_label')
         self.y_label = QLabel('y_label')
         self.s_label = QLabel('s_label')
+        self.t_label = QLabel('t_label')  # Todo: ensure this is initialized properly
         self.map_instructions = QLabel('Welcome to the game!\nUse the arrow keys to move around\nand +/- to scroll.')
 
         ctrl_panel = QVBoxLayout()
         ctrl_panel.addWidget(self.x_label, alignment=Qt.AlignHCenter)
         ctrl_panel.addWidget(self.y_label, alignment=Qt.AlignHCenter)
         ctrl_panel.addWidget(self.s_label, alignment=Qt.AlignHCenter)
+        ctrl_panel.addWidget(self.t_label, alignment=Qt.AlignHCenter)
         ctrl_panel.addWidget(self.map_instructions, alignment=Qt.AlignHCenter)
         ctrl_panel.addWidget(turn_btn, alignment=Qt.AlignHCenter)
 
@@ -183,6 +201,7 @@ class MapTab(QWidget):
         self.set_view(0+0j, 100.0)
 
     def keyPressEvent(self, event):
+        # Todo: implement movement adjustments relative to the screen size e.g. up means 1/3 height upwards.
         key = event.key()
         if key == Qt.Key_Left:
             self.move_view(posn=1)
