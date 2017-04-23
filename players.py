@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import random
 from playerInterface import Player, Interface
 
 
@@ -11,4 +12,6 @@ class Human(Player):
 
 class DummyAI(Player):
     """This is a placeholder for the AI"""
-    pass
+    def __init__(self):
+        self.Name = random.randint(1, 1000)
+        print("Dummy AI {} reporting for duty.".format(self.Name))
