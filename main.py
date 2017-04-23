@@ -16,7 +16,9 @@ import copy
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import QPainter, QColor, QIcon
 from PyQt5.QtCore import *
-from players import Human
+from playerInterface import Interface
+from players import Human, DummyAI
+from characters import Character
 
 eventQueue = []  # todo this properly later
 
@@ -75,42 +77,53 @@ rate of change = 0.5*(2x*dx/dt + 2y*dy/dt)/sqrt(x*x+y*y)
 """
 
 
+class GameMaster:
+    """This class controls the game flow."""
+
+    def __init__(self):
+        # Initialise a state
+        self.state = GameState()
+        self.state.test_render()
+
+        # Initialise player list
+        # Populate with dummies, connect to the character list
+        self.playerList = [Interface(self, DummyAI()) for _ in self.state.characterList]
+
+        # Now we're waiting for a player to connect.
+
+    def connect_human(self, player):
+        """This overwrites one of the dummy AIs with a Human player, and returns the interface"""
+        human_interface = Interface(self, Human())
+        self.playerList[player] = human_interface
+        return human_interface
+
+
 class GameState:
-    """This is a dummy class containing the entire game state"""
+    """This is a partial or complete game state"""
     def __init__(self):
         self.pieceList = []
-        self.playerList = [Human()]
-        self.test_render()
-        #self.test_paint_performance()
-
+        self.characterList = []
         self.time = 0
 
-    def partial_state(self, player):
-        """This function returns the state known to the nth player"""
-        assert(player < len(self.playerList))
-        # TODO: implement
-        return copy.deepcopy(self)
-
     def test_render(self):
+        """This is a demo configuration"""
         demo_posns = [1+2j, 4+5j, 3-1j]
         self.pieceList = [GamePiece(posn, 0.0) for posn in demo_posns]
+        self.characterList = [Character(), Character()]
 
     def test_paint_performance(self):
+        """This is a demo configuration"""
         demo_posns = [random.randrange(0, 400) + random.randrange(0, 400)*1j for _ in range(100000)]
         self.pieceList = [GamePiece(posn, 0.0) for posn in demo_posns]
 
-    def advance_time(self, target_increase):
-        """This function is the master function for advancing time. It takes a list of orders, parses and verifies them,
-        resumes running the simulation, and returns a list of events along with a new partial state."""
-        self.time += target_increase
-
 
 class OpenAurora(QMainWindow):
-    def __init__(self):
+    def __init__(self, GM):
         super().__init__()
 
-        self.state = GameState()
-        self.p_state = self.state.partial_state(0)
+        self.GM = GM
+        self.IF = self.GM.connect_human(0)
+        self.state = self.IF.get_state()
 
         self.main_view = QTabWidget(self)
         self.setCentralWidget(self.main_view)
@@ -153,12 +166,12 @@ class OpenAurora(QMainWindow):
     def end_turn(self):
         """This method ends the turn and updates the UI accordingly."""
         increment = self.target_turn_length
-        self.state.advance_time(increment)
+        self.state = self.IF.end_turn(increment)
         self.update_ui()
 
     def update_ui(self):
         # Todo: ensure t_label on the MapTab is written to correctly.
-        self.MapTab.t_label.setText('time={:4f}'.format(self.p_state.time))
+        self.MapTab.t_label.setText('time={:4f}'.format(self.state.time))
         self.MapTab.update()
 
 
@@ -170,7 +183,7 @@ class MapTab(QWidget):
         self.cur_posn = 0+0j
         self.cur_scal = 100.0
 
-        self.mapFrame = TacView(self, parent.p_state)
+        self.mapFrame = TacView(self, parent.state)
 
         turn_btn = QPushButton('Next turn', self)
         turn_btn.setToolTip('This ends the turn')
@@ -270,6 +283,8 @@ class TacView(QFrame):
         painter.fillRect(posn.real, posn.imag, width, width, color)
 
 if __name__ == '__main__':
+    # Load the game
+    game_master = GameMaster()
     app = QApplication([])
-    OA = OpenAurora()
+    OA = OpenAurora(game_master)
     sys.exit(app.exec_())
