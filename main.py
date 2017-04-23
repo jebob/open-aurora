@@ -103,7 +103,7 @@ class GameState:
     def __init__(self):
         self.pieceList = []
         self.characterList = []
-        self.time = 0
+        self.time = 0.0
 
     def test_render(self):
         """This is a demo configuration"""
@@ -155,6 +155,7 @@ class OpenAurora(QMainWindow):
         self.resize(800, 600)
         self.center()
         self.setWindowTitle('OpenAurora')
+        self.update_ui()  # This ensures that everything is initialised correctly
         self.show()
 
     def center(self):
@@ -170,17 +171,16 @@ class OpenAurora(QMainWindow):
         self.update_ui()
 
     def update_ui(self):
-        # Todo: ensure t_label on the MapTab is written to correctly.
-        self.MapTab.t_label.setText('time={:4f}'.format(self.state.time))
-        self.MapTab.update()
+        self.MapTab.update_ui()
 
 
 class MapTab(QWidget):
     def __init__(self, parent):
         super().__init__()
         self.setFocusPolicy(Qt.StrongFocus)
+        self.parent = parent
 
-        self.cur_posn = 0+0j
+        self.cur_posn = 0+0j  # Define some initial view
         self.cur_scal = 100.0
 
         self.mapFrame = TacView(self, parent.state)
@@ -210,8 +210,7 @@ class MapTab(QWidget):
         hbox.addWidget(self.mapFrame, stretch=1)
 
         self.setLayout(hbox)
-
-        self.set_view(0+0j, 100.0)
+        self.update_ui()  # Finalise initialisation
 
     def keyPressEvent(self, event):
         # Todo: implement movement adjustments relative to the screen size e.g. up means 1/3 height upwards.
@@ -237,25 +236,21 @@ class MapTab(QWidget):
         else:
             super(MapTab, self).keyPressEvent(event)
 
-    def set_view(self, posn, scal):
-        """This function sets the view to some position and scale"""
-        # Set new board position
-        self.cur_posn = posn
-        self.cur_scal = scal
-
+    def update_ui(self):
+        """This function updates this tab"""
         # Write to the labels in the control panel.
-        self.x_label.setText('x={:4f}'.format(posn.real))
-        self.y_label.setText('y={:4f}'.format(posn.imag))
-        self.s_label.setText('scale={:4f}'.format(scal))
+        self.x_label.setText('x={:4f}'.format(self.cur_posn.real))
+        self.y_label.setText('y={:4f}'.format(self.cur_posn.imag))
+        self.s_label.setText('scale={:4f}'.format(self.cur_scal))
+        self.t_label.setText('scale={:4f}'.format(self.parent.state.time))
 
-        # Trigger a paint event
-        self.mapFrame.update()
+        # No need to trigger a paint event, the above should cause QT to trigger one.
 
     def move_view(self, posn=None, scal=None):
         """This function modifies the existing view by adding a new position and/or multiplying the scale."""
-        new_posn = self.cur_posn if posn is None else self.cur_posn + posn
-        new_scal = self.cur_scal if scal is None else self.cur_scal * scal
-        self.set_view(new_posn, new_scal)
+        self.cur_posn = self.cur_posn if posn is None else self.cur_posn + posn
+        self.cur_scal = self.cur_scal if scal is None else self.cur_scal * scal
+        self.update_ui()
 
 
 class TacView(QFrame):
