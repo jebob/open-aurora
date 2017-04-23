@@ -79,6 +79,7 @@ rate of change = 0.5*(2x*dx/dt + 2y*dy/dt)/sqrt(x*x+y*y)
 
 class GameMaster:
     """This class controls the game flow."""
+    human_ID = 0
 
     def __init__(self):
         # Initialise a state
@@ -89,13 +90,36 @@ class GameMaster:
         # Populate with dummies, connect to the character list
         self.playerList = [Interface(self, DummyAI()) for _ in self.state.characterList]
 
-        # Now we're waiting for a player to connect.
+        # Now overwrite with the human player
+        self.human_interface = Interface(self, Human())
+        self.playerList[self.human_ID] = self.human_interface
 
-    def connect_human(self, player):
-        """This overwrites one of the dummy AIs with a Human player, and returns the interface"""
-        human_interface = Interface(self, Human())
-        self.playerList[player] = human_interface
-        return human_interface
+    def main_loop(self):
+        """Main game 'loop'.
+        Due to not wanting to multithread and QT needing to be the main
+        loop, the main game loop needs to be escapable.
+        The nice thing about this design is that we can replace it with proper concurrency later.
+        """
+        # Load user commands into user's player
+        self.human_interface.wake = False
+
+        # Do a loop
+        while True:
+            # Fetch orders from all players
+            orders = []
+            for interface in self.playerList:
+                orders.extend(interface.get_orders())
+
+            # Advance time
+
+            # Identify reacting players
+
+            # Pass responses to reacting players
+
+            # Break if user's turn
+            break
+
+        # Possibly do some extra stuff to the user's player here.
 
 
 class GameState:
@@ -122,7 +146,7 @@ class OpenAurora(QMainWindow):
         super().__init__()
 
         self.GM = GM
-        self.IF = self.GM.connect_human(0)
+        self.IF = self.GM.human_interface
         self.state = self.IF.get_state()
 
         self.main_view = QTabWidget(self)
@@ -167,7 +191,8 @@ class OpenAurora(QMainWindow):
     def end_turn(self):
         """This method ends the turn and updates the UI accordingly."""
         increment = self.target_turn_length
-        self.state = self.IF.end_turn(increment)
+        self.GM.main_loop()
+        self.state = self.IF.get_state()
         self.update_ui()
 
     def update_ui(self):
@@ -242,7 +267,7 @@ class MapTab(QWidget):
         self.x_label.setText('x={:4f}'.format(self.cur_posn.real))
         self.y_label.setText('y={:4f}'.format(self.cur_posn.imag))
         self.s_label.setText('scale={:4f}'.format(self.cur_scal))
-        self.t_label.setText('scale={:4f}'.format(self.parent.state.time))
+        self.t_label.setText('time={:4f}'.format(self.parent.state.time))
 
         # No need to trigger a paint event, the above should cause QT to trigger one.
 
