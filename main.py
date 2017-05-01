@@ -120,7 +120,12 @@ class GameMaster:
                     for interface in self.playerList:
                         interface.messages.append(msg)
 
+
+            # Decide on how far to advance
+            timeIncrement = 1
+
             # Advance time
+            self.state.time += timeIncrement
 
             # Identify reacting players
 
