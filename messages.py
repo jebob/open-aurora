@@ -16,4 +16,29 @@ class TimePassMess(Message):
         self.text = "The time is {}".format(time)
     pass
 
+
+class ChatMess(Message):
+    """This message is passed to a player if they receive a message from another player"""
+    def __init__(self, time, text):
+        super().__init__(time)
+        self.text = "{}: {}".format(time, text)
+
+
 # Todo: add more messages
+
+
+class Order:
+    """This is a superclass for orders to the GM"""
+    pass
+
+
+class WaitOrder(Order):
+    """This is a request for control to be returned at a particular time"""
+    def __init__(self, time):
+        self.time = time
+
+
+class ChatOrder(Order):
+    """This is a message to all"""
+    def __init__(self, text):
+        self.text = text

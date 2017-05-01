@@ -19,6 +19,7 @@ from PyQt5.QtCore import *
 from playerInterface import Interface
 from players import Human, DummyAI
 from characters import Character
+from messages import *
 
 eventQueue = []  # todo this properly later
 
@@ -88,10 +89,10 @@ class GameMaster:
 
         # Initialise player list
         # Populate with dummies, connect to the character list
-        self.playerList = [Interface(self, DummyAI()) for _ in self.state.characterList]
+        self.playerList = [Interface(self, DummyAI) for _ in self.state.characterList]
 
         # Now overwrite with the human player
-        self.human_interface = Interface(self, Human())
+        self.human_interface = Interface(self, Human)
         self.playerList[self.human_ID] = self.human_interface
 
     def main_loop(self):
@@ -108,7 +109,16 @@ class GameMaster:
             # Fetch orders from all players
             orders = []
             for interface in self.playerList:
-                orders.extend(interface.get_orders())
+                orders.extend(interface.orders)
+                interface.orders = []
+
+            # Process orders
+            for odr in orders:
+                if isinstance(odr, ChatOrder):
+                    # Pass messages to all players
+                    msg = ChatMess(self.state.time, odr.text)
+                    for interface in self.playerList:
+                        interface.messages.append(msg)
 
             # Advance time
 
@@ -191,8 +201,13 @@ class OpenAurora(QMainWindow):
     def end_turn(self):
         """This method ends the turn and updates the UI accordingly."""
         increment = self.target_turn_length
+
+        self.IF.messages = []  # Flush old messages
         self.GM.main_loop()
         self.state = self.IF.get_state()
+        # todo: implement a proper event displaying system (a tab?)
+        for order in self.IF.messages:
+            print(order.text)
         self.update_ui()
 
     def update_ui(self):

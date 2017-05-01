@@ -3,6 +3,7 @@
 
 import random
 from playerInterface import Player, Interface
+from messages import *
 
 
 class Human(Player):
@@ -12,6 +13,7 @@ class Human(Player):
 
 class DummyAI(Player):
     """This is a placeholder for the AI"""
-    def __init__(self):
+    def __init__(self, IF):
+        super().__init__(IF)
         self.Name = random.randint(1, 1000)
-        print("Dummy AI {} reporting for duty.".format(self.Name))
+        self.IF.orders.append(ChatOrder("AI {} reporting for Duty".format(self.Name)))
