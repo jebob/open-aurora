@@ -20,46 +20,12 @@ from playerInterface import Interface
 from players import Human, DummyAI
 from characters import Character
 from messages import *
+from tactical.tactical import Tactical
 
 eventQueue = []  # todo this properly later
 
 
-class GamePiece:
-    """"This is the parent of all classes that have a presence on the map."""
-    detection_radius = 0  # by default things don't detect
-    speed = 0  # by default things don't move
 
-    def __init__(self, position, time):
-        assert isinstance(position, complex)
-        assert isinstance(time, float)
-        self.start_position = position
-        self.target_position = position
-        self.start_time = time
-        self.finish_time = time
-
-    def go_to(self, target_position):
-        """This tells the craft to travel to a location."""
-        assert isinstance(target_position, complex)
-        assert self.speed > 0
-        self.target_position = target_position
-        distance = abs(target_position-self.start_position)
-        self.finish_time = self.start_time + distance/self.speed
-        eventQueue.append({'type': 'move finished', 'time': self.finish_time, 'piece': self})
-
-    def position(self, time):
-        """returns the position at the given time"""
-        if self.start_position == self.target_position:
-            return self.start_position
-        assert self.start_time <= time <= self.finish_time
-        f = (time - self.start_time) / (self.finish_time - self.start_time)
-        assert 0 <= f <= 1
-        return self.start_position*(1-f)+self.target_position*f
-
-
-class Ship(GamePiece):
-    speed = 5
-    detection_radius = 2
-    target_position = None
 
 """
 I have:
@@ -85,7 +51,7 @@ class GameMaster:
     def __init__(self):
         # Initialise a state
         self.state = GameState()
-        self.state.test_render()
+        self.state.tactical.test_render()
 
         # Initialise player list
         # Populate with dummies, connect to the character list
@@ -93,7 +59,11 @@ class GameMaster:
 
         # Now overwrite with the human player
         self.human_interface = Interface(self, Human)
-        self.playerList[self.human_ID] = self.human_interface
+        try:
+            self.playerList[self.human_ID] = self.human_interface
+        except IndexError:
+            # Hm, can't find human player
+            pass
 
     def main_loop(self):
         """Main game 'loop'.
@@ -140,20 +110,9 @@ class GameMaster:
 class GameState:
     """This is a partial or complete game state"""
     def __init__(self):
-        self.pieceList = []
+        self.tactical = Tactical()
         self.characterList = []
         self.time = 0.0
-
-    def test_render(self):
-        """This is a demo configuration"""
-        demo_posns = [1+2j, 4+5j, 3-1j]
-        self.pieceList = [GamePiece(posn, 0.0) for posn in demo_posns]
-        self.characterList = [Character(), Character()]
-
-    def test_paint_performance(self):
-        """This is a demo configuration"""
-        demo_posns = [random.randrange(0, 400) + random.randrange(0, 400)*1j for _ in range(100000)]
-        self.pieceList = [GamePiece(posn, 0.0) for posn in demo_posns]
 
 
 class OpenAurora(QMainWindow):
@@ -307,13 +266,12 @@ class TacView(QFrame):
         self.state = state
 
     def paintEvent(self, event):
-
         painter = QPainter(self)
         rect = self.contentsRect()
 
         painter.fillRect(0, 0, rect.right(), rect.bottom(), QColor(0x000000))
 
-        for piece in self.state.pieceList:
+        for piece in self.state.tactical.pieceList:
             self.draw_ship(painter, (piece.start_position + self.par.cur_posn) * self.par.cur_scal)
 
     @staticmethod
@@ -321,6 +279,7 @@ class TacView(QFrame):
         color = QColor(0x6666CC)
         width = 10
         painter.fillRect(posn.real, posn.imag, width, width, color)
+
 
 if __name__ == '__main__':
     # Load the game
