@@ -8,7 +8,6 @@ class Tactical:
     def __init__(self, state):
         self.state = state
         self.pieceList = []
-        self.tabs = {}
         self.tabs = {"Tactical View": MapTab(self)}
 
     def test_render(self):
